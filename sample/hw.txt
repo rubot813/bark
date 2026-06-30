@@ -1,0 +1,9 @@
+proc main {
+	store param
+	var = 1337
+	str = "Hello world from bark! var: %d, param: %d.\r\n"
+	
+	ext printf ( ( iaddrof str ) var param 2 )
+	drop
+	halt
+}

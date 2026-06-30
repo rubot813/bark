@@ -1,0 +1,90 @@
+proc math_test {
+	// Тест базовой арифметики.
+	math_res = ( 10 + 20 * 5 / 3 % 4 )
+	if ( math_res == 11 ) {
+		math_res = 1
+	}
+}
+
+proc logic_test {
+	// Тест логических операторов и сравнения.
+	logic_res0 = ( ( 10 == 10 ) == ( 20 != 15 ) )
+	logic_res1 = ( logic_res0 != 0 )
+	logic_res2 = ( ( 10 < 50 ) && ( 20 > 5 ) )
+	logic_res = ( logic_res0 && logic_res1 && logic_res2 )
+}
+
+proc bit_test {
+	bit_res0 = ( ( 1 & 1 ) << 2 )
+	bit_res1 = ( bit_res0 | 3 )
+	bit_res = ( bit_res1 == 7 )
+}
+
+proc addr_test {
+	// Взятие адреса переменной (addr) и ее чтение (read).
+	math_addr = ( addrof math_res )
+	addr_res = ( read math_addr )
+	addr_res = ( addr_res == 1 )
+}
+
+proc wr_test {
+	// Тест чтения/записи.
+	cell = 1000
+	cell_addr = ( addrof cell )
+	write cell_addr = 500
+	if ( read ( addrof cell ) == 500 ) {
+		wr_res = 1
+	}
+}
+
+proc str_test {
+	// Тест строки.
+	str = "rxteststr"
+	str_sym0 = ( bread ( iaddrof str ) )
+	str_sym1 = ( bread ( iaddrof str + 1 ) )
+	if ( ( str_sym0 == 114 ) && ( str_sym1 == 120 ) ) {
+		str_res = 1
+	}
+}
+
+proc arr_test {
+	// Тест массивов.
+	arr = [ 555 666 777 888 ]
+	arr_val0 = ( read ( iaddrof ( arr + word_size ) ) )
+	arr_val1 = ( read ( iaddrof ( arr + ( word_size * 2 ) ) ) )
+	if ( ( arr_val0 == 666 ) && ( arr_val1 == 777 ) ) {
+		arr_res = 1
+	}
+}
+
+proc while_test {
+	i = 1
+	total = 0
+	while ( i < 6 ) {
+		total = ( total + i )
+		i = ( i + 1 )
+		int
+	}
+	if ( total == 15 ) {
+		while_res = 1
+	}
+}
+
+proc main {
+  status = 0
+  call math_test
+  call logic_test
+  call bit_test
+  call addr_test
+  call wr_test
+  call str_test
+  call arr_test
+  call while_test
+  if ( math_res && logic_res && bit_res && addr_res && wr_res && str_res && arr_res && while_res ) {
+	status = 1
+  }
+  status_str = "status: %d\r\n"
+  ext printf ( ( iaddrof status_str ) status 1 )
+  store _
+  halt
+}

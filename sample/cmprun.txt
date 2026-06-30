@@ -1,0 +1,100 @@
+proc file_read {
+	file_str = "H:\\bark_v1\\hw.txt";
+	file_mode_str = "rb";
+	
+	// Открытие файла
+	ext fopen ( ( iaddrof file_str ) ( iaddrof file_mode_str ) )
+	store file
+	
+	// Вывести дескриптор в консоль.
+	str = "descriptor: 0x%x\r\n"
+	ext printf ( ( iaddrof str ) file 1 )
+	drop
+	
+	// Переместить указатель в конец файла.
+	ext fseek ( file 0 2 )	// 2 == SEEK_END
+	drop
+	
+	// Получить размер файла.
+	ext ftell ( file )
+	store file_size
+	
+	// Вывести размер файла в консоль.
+	str = "file size: %d\r\n"
+	ext printf ( ( iaddrof str ) file_size 1 )
+	drop
+	
+	// Установить указатель на начало файла.
+	ext fseek ( file 0 0 )	// 0 == SEEK_SET
+	drop
+	
+	// Выделить буфер под файл и нуль-терминатор.
+	ext malloc ( ( file_size + 1 ) )
+	store file_buf
+	
+	// Прочитать файл в буфер.
+	ext fread ( file_buf 1 file_size file )
+	drop
+	
+	// Записать в конец файла нуль терминатор: file_buf[file_size] = '\0'
+	write ( file_buf + file_size ) = 0
+	
+	str = "buffer: %s\r\n"
+	ext printf ( ( iaddrof str ) file_buf 1 )
+	drop
+	
+	// Закрыть файл.
+	ext fclose ( file )
+	drop
+}	// file_read
+
+proc file_compile {
+	// Инициализация ROM.
+	ext rom_init ( )
+	store rom
+	
+	str = "rom init: 0x%x\r\n"
+	ext printf ( ( iaddrof str ) rom 1 )
+	drop
+	
+	// Компиляция.
+	ext compile ( file_buf rom )
+	store cstatus
+	
+	// Чтение magic ROM.
+	magic = ( read rom )
+	
+	// Вывести результат компиляции в консоль.
+	str = "compile status: %d, magic: 0x%x\r\n"
+	ext printf ( ( iaddrof str ) cstatus magic 2 )
+	drop
+} // file_compile
+
+proc code_run {
+	if ( cstatus == 0 ) {
+		ext vm_init ( rom )
+		store vm
+		
+		// Параметр программы (argv).
+		ext vm_push ( vm 50 )
+		
+		estatus = 0 // est_work
+		while ( estatus < 2 ) {
+			ext exec ( vm )
+			store estatus
+		}
+		
+		ext vm_free ( vm )
+	}
+	ext rom_free ( rom )
+} // code_run
+
+proc main {
+	call file_read
+	call file_compile
+	call code_run
+	
+	// Чистим за собой!
+	ext free ( file_buf )
+	halt
+}
