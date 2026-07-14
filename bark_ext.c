@@ -27,14 +27,14 @@ if (vm->sp >= sp_count) {				\
 const char* ext_name[] = {
 	// = = = = stdio.h = = = =
 	"printf", "sprintf", "fprintf", "scanf",
-	"fscanf", "fopen", "fclose", "fread",
-	"fwrite", "fgets", "fputs", "fseek",
-	"ftell",
+	"fscanf", "strncpy", "fopen", "fclose",
+	"fread", "fwrite", "fgets", "fputs",
+	"fseek", "ftell",
 
 	// = = = = string.h = = = =
 	"strcpy", "strcat", "strcmp", "strchr",
-	"strstr", "strlen", "memcpy", "memcmp",
-	"memchr", "memset",
+	"strstr", "strlen", "strtok", "memcpy",
+	"memcmp", "memchr", "memset",
 
 	// = = = = stdlib.h = = = =
 	"atoi", "itoa", "rand", "srand",
@@ -47,7 +47,7 @@ const char* ext_name[] = {
 };	// ext_name
 
 // Определение общего количества внешних функций в ext_name.
-const word_t ext_count = 41;
+const word_t ext_count = 43;
 
 // Тип массива аргументов внешней функции.
 typedef word_t arg_t[EXT_MAX_ARG_COUNT];
@@ -85,48 +85,50 @@ word_t ext(word_t id, vm_t *vm) {
 		case (3) : EXT_DEFINE_VA(1, EXT_DEFINE_FUNC((arg_count + 1), STACK_PUSH(vscanf((char *)(arg[0]), (va_list)(arg + 1))))); break;
 		case (4) : EXT_DEFINE_VA(2, EXT_DEFINE_FUNC((arg_count + 2), STACK_PUSH(vfscanf((FILE *)(arg[0]), (const char *)(arg[1]), (va_list)(arg + 2))))); break;
 
-		case (5) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(fopen((const char *)(arg[0]), (const char *)(arg[1]))))); break;
-		case (6) : EXT_DEFINE_FUNC(1, STACK_PUSH(fclose((FILE *)(arg[0])))); break;
-		case (7) : EXT_DEFINE_FUNC(4, STACK_PUSH(fread((void *)(arg[0]), arg[1], arg[2], (FILE *)(arg[3])))); break;
-		case (8) : EXT_DEFINE_FUNC(4, STACK_PUSH((word_t)(fwrite((const void *)(arg[0]), arg[1], arg[2], (FILE *)(arg[3]))))); break;
-		case (9) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(fgets((char *)(arg[0]), arg[1], (FILE *)(arg[2]))))); break;
-		case (10) : EXT_DEFINE_FUNC(2, STACK_PUSH(fputs((const char *)(arg[0]), (FILE *)(arg[1])))); break;
-		case (11) : EXT_DEFINE_FUNC(3, STACK_PUSH(fseek((FILE *)(arg[0]), (long)(arg[1]), arg[2]))); break;
-		case (12) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(ftell((FILE *)(arg[0]))))); break;
+		case (5) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(strncpy((char *)(arg[0]), (char *)(arg[1]), arg[2])))); break;
+		case (6) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(fopen((const char *)(arg[0]), (const char *)(arg[1]))))); break;
+		case (7) : EXT_DEFINE_FUNC(1, STACK_PUSH(fclose((FILE *)(arg[0])))); break;
+		case (8) : EXT_DEFINE_FUNC(4, STACK_PUSH(fread((void *)(arg[0]), arg[1], arg[2], (FILE *)(arg[3])))); break;
+		case (9) : EXT_DEFINE_FUNC(4, STACK_PUSH((word_t)(fwrite((const void *)(arg[0]), arg[1], arg[2], (FILE *)(arg[3]))))); break;
+		case (10) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(fgets((char *)(arg[0]), arg[1], (FILE *)(arg[2]))))); break;
+		case (11) : EXT_DEFINE_FUNC(2, STACK_PUSH(fputs((const char *)(arg[0]), (FILE *)(arg[1])))); break;
+		case (12) : EXT_DEFINE_FUNC(3, STACK_PUSH(fseek((FILE *)(arg[0]), (long)(arg[1]), arg[2]))); break;
+		case (13) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(ftell((FILE *)(arg[0]))))); break;
 
 		// = = = = string.h = = = =
-		case (13) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strcpy((char *)(arg[0]), (const char *)(arg[1]))))); break;
-		case (14) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strcat((char *)(arg[0]), (const char *)(arg[1]))))); break;
-		case (15) : EXT_DEFINE_FUNC(2, STACK_PUSH(strcmp((const char *)(arg[0]), (const char *)(arg[1])))); break;
-		case (16) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strchr((const char *)(arg[0]), arg[1])))); break;
-		case (17) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strstr((const char *)(arg[0]), (const char *)(arg[1]))))); break;
-		case (18) : EXT_DEFINE_FUNC(1, STACK_PUSH(strlen((const char *)(arg[0])))); break;
-		case (19) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memcpy((void *)(arg[0]), (const void *)(arg[1]), arg[2])))); break;
-		case (20) : EXT_DEFINE_FUNC(3, STACK_PUSH(memcmp((const void *)(arg[0]), (const void *)(arg[1]), arg[2]))); break;
-		case (21) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memchr((const void *)(arg[0]), arg[1], arg[2])))); break;
-		case (22) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memset((void *)(arg[0]), arg[1], arg[2])))); break;
+		case (14) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strcpy((char *)(arg[0]), (const char *)(arg[1]))))); break;
+		case (15) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strcat((char *)(arg[0]), (const char *)(arg[1]))))); break;
+		case (16) : EXT_DEFINE_FUNC(2, STACK_PUSH(strcmp((const char *)(arg[0]), (const char *)(arg[1])))); break;
+		case (17) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strchr((const char *)(arg[0]), arg[1])))); break;
+		case (18) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strstr((const char *)(arg[0]), (const char *)(arg[1]))))); break;
+		case (19) : EXT_DEFINE_FUNC(1, STACK_PUSH(strlen((const char *)(arg[0])))); break;
+		case (20) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(strtok((char *)(arg[0]), (const char *)(arg[1]))))); break;
+		case (21) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memcpy((void *)(arg[0]), (const void *)(arg[1]), arg[2])))); break;
+		case (22) : EXT_DEFINE_FUNC(3, STACK_PUSH(memcmp((const void *)(arg[0]), (const void *)(arg[1]), arg[2]))); break;
+		case (23) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memchr((const void *)(arg[0]), arg[1], arg[2])))); break;
+		case (24) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(memset((void *)(arg[0]), arg[1], arg[2])))); break;
 
 		// = = = = stdlib.h = = = =
-		case (23) : EXT_DEFINE_FUNC(1, STACK_PUSH(atoi((void *)(arg[0])))); break;
-		case (24) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(itoa(arg[0], (char *)(arg[1]), arg[2])))); break;
-		case (25) : STACK_PUSH(rand()); break;
-		case (26) : EXT_DEFINE_FUNC(1, srand(arg[0])); break;
-		case (27) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(calloc(arg[0], arg[1])))); break;
-		case (28) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(malloc(arg[0])))); break;
-		case (29) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(realloc((void *)(arg[0]), arg[1])))); break;
-		case (30) : EXT_DEFINE_FUNC(1, free((void *)(arg[0]))); break;
-		case (31) : EXT_DEFINE_FUNC(1, STACK_PUSH(system((const char *)(arg[0])))); break;
+		case (25) : EXT_DEFINE_FUNC(1, STACK_PUSH(atoi((void *)(arg[0])))); break;
+		case (26) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(itoa(arg[0], (char *)(arg[1]), arg[2])))); break;
+		case (27) : STACK_PUSH(rand()); break;
+		case (28) : EXT_DEFINE_FUNC(1, srand(arg[0])); break;
+		case (29) : EXT_DEFINE_FUNC(3, STACK_PUSH((word_t)(calloc(arg[0], arg[1])))); break;
+		case (30) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(malloc(arg[0])))); break;
+		case (31) : EXT_DEFINE_FUNC(2, STACK_PUSH((word_t)(realloc((void *)(arg[0]), arg[1])))); break;
+		case (32) : EXT_DEFINE_FUNC(1, free((void *)(arg[0]))); break;
+		case (33) : EXT_DEFINE_FUNC(1, STACK_PUSH(system((const char *)(arg[0])))); break;
 
 		// = = = = bark = = = =
-		case (32) : STACK_PUSH((word_t)(bark_rom_init())); break;
-		case (33) : EXT_DEFINE_FUNC(2, STACK_PUSH(bark_compile((const char *)(arg[0]), (rom_t *)(arg[1])))); break;
-		case (34) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(bark_vm_init((rom_t *)(arg[0]))))); break;
-		case (35) : EXT_DEFINE_FUNC(1, bark_vm_reset((vm_t *)(arg[0]))); break;
-		case (36) : EXT_DEFINE_FUNC(1, STACK_PUSH(bark_exec((vm_t *)(arg[0])))); break;
-		case (37) : EXT_DEFINE_FUNC(2, bark_vm_push((vm_t *)(arg[0]), arg[1])); break;
-		case (38) : EXT_DEFINE_FUNC(1, STACK_PUSH(bark_vm_store((vm_t *)(arg[0])))); break;
-		case (39) : EXT_DEFINE_FUNC(1, bark_rom_free((rom_t *)(arg[0]))); break;
-		case (40) : EXT_DEFINE_FUNC(1, bark_vm_free((vm_t *)(arg[0]))); break;
+		case (34) : STACK_PUSH((word_t)(bark_rom_init())); break;
+		case (35) : EXT_DEFINE_FUNC(2, STACK_PUSH(bark_compile((const char *)(arg[0]), (rom_t *)(arg[1])))); break;
+		case (36) : EXT_DEFINE_FUNC(1, STACK_PUSH((word_t)(bark_vm_init((rom_t *)(arg[0]))))); break;
+		case (37) : EXT_DEFINE_FUNC(1, bark_vm_reset((vm_t *)(arg[0]))); break;
+		case (38) : EXT_DEFINE_FUNC(1, STACK_PUSH(bark_exec((vm_t *)(arg[0])))); break;
+		case (39) : EXT_DEFINE_FUNC(2, bark_vm_push((vm_t *)(arg[0]), arg[1])); break;
+		case (40) : EXT_DEFINE_FUNC(1, STACK_PUSH(bark_vm_store((vm_t *)(arg[0])))); break;
+		case (41) : EXT_DEFINE_FUNC(1, bark_rom_free((rom_t *)(arg[0]))); break;
+		case (42) : EXT_DEFINE_FUNC(1, bark_vm_free((vm_t *)(arg[0]))); break;
 
 		// Внешняя функция не найдена.
 		default: status = est_ext_not_found;

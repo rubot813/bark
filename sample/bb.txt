@@ -1,0 +1,568 @@
+//bb - Bark Base: the core operating environment and runtime for the Bark programming language.
+
+// Вспомогательная процедура замены символов \r и \n на \0.
+// Ожидает указатель на строку на вершине стека.
+proc str_trim {
+	// Достать со стека указатель на строку.
+	store tstr
+	
+	// Поиск и замена \r -> \0
+	ext strchr ( tstr 0x0d )
+	store ptr
+	if ( ptr ) {
+		bwrite ptr = 0x00
+	}	// if ptr
+	
+	// Поиск и замена \n -> \0
+	ext strchr ( tstr 0x0a )
+	store ptr
+	if ( ptr ) {
+		bwrite ptr = 0x00
+	}	// if ptr
+}	// str_trim
+
+// Функция выгрузки rom, если он загружен.
+proc rom_unload {
+	// Выгрузка уже загруженного образа.
+	if ( rom ) {
+		str = "freeing rom at 0x%x...\r\n"
+		ext printf ( ( iaddrof str ) rom 1 )
+		drop
+		ext rom_free ( rom )
+		rom = 0x00
+	}	// if rom
+}	// rom_unload
+
+// Процедура обработки команды compile.
+// Осуществляет компиляцию файла с исходным кодом bark во внутренний буфер rom.
+// Ожидает "c <пробел> <путь к файлу с кодом>".
+proc handle_compile {
+	// Константа для режима открытия файла.
+	file_mode_str = "rb"
+	
+	// Получение второго байта буфера.
+	sec_sym = ( bread ( buffer + 1 ) )
+	
+	// Если второй байт буфера является пробелом
+	if ( sec_sym == 0x20 ) {
+		// Получение указателя на строку с путем к файлу.
+		path = ( buffer + 2 )
+		
+		// Замена конечных символов на нуль-терминатор для корректной обработки.
+		push path
+		call str_trim
+		
+		// Открытие файла.
+		ext fopen ( path ( iaddrof file_mode_str ) )
+		store file
+		if ( file ) {
+			// Переместить указатель в конец файла.
+			ext fseek ( file 0 2 )	// 2 == SEEK_END
+			drop
+	
+			// Получить размер файла.
+			ext ftell ( file )
+			store file_size
+	
+			// Вывести размер файла в консоль.
+			str = "file '%s' opened. size: %db.\r\n"
+			ext printf ( ( iaddrof str ) path file_size 2 )
+			drop
+			
+			// Установить указатель на начало файла.
+			ext fseek ( file 0 0 )	// 0 == SEEK_SET
+			drop
+	
+			// Выделить буфер под файл и нуль-терминатор.
+			ext malloc ( ( file_size + 1 ) )
+			store file_buffer
+	
+			// Прочитать файл в буфер.
+			ext fread ( file_buffer file_size 1 file )
+			store read_count
+			
+			// Если чтене файла произведено успешно
+			if ( read_count == 1 ) {
+				// Записать в конец файла нуль терминатор: file_buffer[file_size] = '\0'
+				write ( file_buffer + file_size ) = 0x00
+		
+				// Закрыть файл.
+				ext fclose ( file )
+				drop
+				
+				// Выгрузка образа, если загружен.
+				call rom_unload
+				
+				// Инициализация нового ROM.
+				ext rom_init ( )
+				store rom
+				if ( rom ) {
+					str = "rom loaded at 0x%x\r\ncompiling...\r\n"
+					ext printf ( ( iaddrof str ) rom 1 )
+					drop
+					
+					// Компиляция.
+					ext compile ( file_buffer rom )
+					store comp_status
+		
+					// Если компиляция успешна
+					if ( comp_status == 0x00 ) {
+						// Чтение magic ROM.
+						rom_magic = ( read rom )
+					
+						str = "compilation success | magic: 0x%x\r\n"
+						ext printf ( ( iaddrof str ) rom_magic 1 )
+						drop
+					}	// if compilation success
+					
+					// Если компиляция завершилась ошибкой.
+					if ( comp_status ) {
+						str = "compilation failed | error code: %d\r\n"
+						ext printf ( ( iaddrof str ) comp_status 1 )
+						drop
+					}	// if compilation success
+				} // if rom
+				
+				// Если не удалось инициализировать образ
+				if ( rom == 0x00 ) {
+					str = "compile: failed to load rom!\r\n"
+					ext printf ( ( iaddrof str ) path 1 )
+					drop
+				}	// if not rom
+				
+			} // if read_count
+			
+			// Если чтение файла завершилось ошибкой
+			if ( read_count != 1 ) {
+				str = "compile: failed to read file!\r\n"
+				ext printf ( ( iaddrof str ) 0 )
+				drop
+			}	// if read_count
+		}	// if file
+		
+		// Если не удалось открыть файл
+		if ( file == 0x00 ) {
+			str = "compile: cannot open file '%s'!\r\n"
+			ext printf ( ( iaddrof str ) path 1 )
+			drop
+		}	// if not file
+	}	// if space
+	
+	// Если второй байт буфера не является пробелом
+	if ( sec_sym != 0x20 ) {
+		str = "compile: syntax error!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	}	// if not space
+}	// handle_compile
+
+// Процедура обработки команды help.
+// Выводит список возможных команд.
+proc handle_help {
+	str = "command list: [h]elp, [c]ompile, e[x]ecute, [l]oad, [s]ave, s[y]stem, [i]nfo, [e]xit.\r\n"
+	ext printf ( ( iaddrof str ) 0 )
+	drop
+}	// handle_help
+
+// Процедура обработки команды info.
+// Выводит информацию о bb и bark.
+proc handle_info {
+	str = "bb ver: %d, lang ver: %d\r\nword_size: %db, rom size: %db\r\nstdin: 0x%x, stdout: 0x%x, stderr: 0x%x\r\n"
+	ext printf ( ( iaddrof str ) version _lang_ver _word_size _rom_size _stdin _stdout _stderr 7 )
+	drop
+}	// handle_info
+
+// Процедура обработки команды load.
+// Ожидает "l <пробел> <путь к файлу>".
+proc handle_load {
+	// Константа для режима открытия файла.
+	file_mode_str = "rb"
+	
+	// Получение второго байта буфера.
+	sec_sym = ( bread ( buffer + 1 ) )
+	
+	// Если второй байт буфера является пробелом
+	if ( sec_sym == 0x20 ) {
+		// Получение указателя на строку с путем к файлу.
+		path = ( buffer + 2 )
+		
+		// Замена конечных символов на нуль-терминатор для корректной обработки.
+		push path
+		call str_trim
+		
+		// Открытие файла.
+		ext fopen ( path ( iaddrof file_mode_str ) )
+		store file
+		if ( file ) {
+			// Переместить указатель в конец файла.
+			ext fseek ( file 0 2 )	// 2 == SEEK_END
+			drop
+	
+			// Получить размер файла.
+			ext ftell ( file )
+			store file_size
+	
+			// Вывести размер файла в консоль.
+			str = "file '%s' opened. size: %db.\r\n"
+			ext printf ( ( iaddrof str ) path file_size 2 )
+			drop
+			
+			// Установить указатель на начало файла.
+			ext fseek ( file 0 0 )	// 0 == SEEK_SET
+			drop
+			
+			// Если размер файла корректен
+			if ( file_size == _rom_size ) {
+				// Выгрузка образа, если загружен.
+				call rom_unload
+				
+				// Инициализация нового ROM.
+				ext rom_init ( )
+				store rom
+				if ( rom ) {
+					str = "rom loaded at 0x%x\r\nreading the file...\r\n"
+					ext printf ( ( iaddrof str ) rom 1 )
+					drop
+					
+					// Прочитать файл в буфер.
+					ext fread ( rom _rom_size 1 file )
+					store read_size
+					
+					// Если чтение успешно
+					if ( read_size == 1 ) {
+						str = "file read successfull\r\n"
+						ext printf ( ( iaddrof str ) 0 )
+						drop
+					}	// if read_size
+					
+					// Если чтение завершилось ошибкой
+					if ( read_size != 1 ) {
+						str = "load: failed to read file\r\n"
+						ext printf ( ( iaddrof str ) 0 )
+						drop
+						
+						// Выгрузка образа.
+						call rom_unload
+					}	// if read_size
+				}	// if rom
+			}	// if file_size
+			
+			// Если размер файла некорректен
+			if ( file_size != _rom_size ) {
+				str = "load: incorrect file size file %d/%d b.\r\n"
+				ext printf ( ( iaddrof str ) file_size _rom_size 2 )
+				drop
+			}	// if file_size
+	
+			// Закрыть файл.
+			ext fclose ( file )
+			drop
+		}	// if file
+		
+		// Если не удалось открыть файл
+		if ( file == 0x00 ) {
+			str = "load: cannot open file '%s'!\r\n"
+			ext printf ( ( iaddrof str ) path 1 )
+			drop
+		}	// if not file
+	}	// if space
+	
+	// Если второй байт буфера не является пробелом
+	if ( sec_sym != 0x20 ) {
+		str = "load: syntax error!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	}	// if not space
+}	// handle_load
+
+// Процедура обработки команды save.
+// Ожидает "s <пробел> <путь к файлу>".
+proc handle_save {
+	// Константа для режима открытия файла.
+	file_mode_str = "wb"
+	
+	// Проверка загрузки образа
+	if ( rom ) {	
+		// Получение второго байта буфера.
+		sec_sym = ( bread ( buffer + 1 ) )
+		
+		// Если второй байт буфера является пробелом
+		if ( sec_sym == 0x20 ) {
+			// Получение указателя на строку с путем к файлу.
+			path = ( buffer + 2 )
+			
+			// Замена конечных символов на нуль-терминатор для корректной обработки.
+			push path
+			call str_trim
+			
+			// Открытие файла на запись.
+			ext fopen ( path ( iaddrof file_mode_str ) )
+			store file
+			
+			// Если файл успешно открыт
+			if ( file ) {
+				// Запись образа в файл.
+				ext fwrite ( rom _rom_size 1 file )
+				store write_count
+			
+				// Если запись произведена успешно
+				if ( write_count == 1 ) {
+					// Запись в консоль об успехе.
+					str = "write successfull\r\n"
+					ext printf ( ( iaddrof str ) write_count 1 )
+					drop
+				}	// if write count
+				
+				// Если произошла ошибка записи
+				if ( write_count == 0 ) {
+					// Запись в консоль об ошибке.
+					str = "save: failed to write\r\n"
+					ext printf ( ( iaddrof str ) write_count _rom_size 2 )
+					drop
+				}	// if write count
+			
+				// Закрыть файл.
+				ext fclose ( file )
+				drop
+			}	// if file
+		
+			// Если не удалось открыть файл
+			if ( file == 0x00 ) {
+				str = "save: cannot create file '%s'!\r\n"
+				ext printf ( ( iaddrof str ) path 1 )
+				drop
+			}	// if not file
+		}	// if space
+	
+		// Если второй байт буфера не является пробелом
+		if ( sec_sym != 0x20 ) {
+			str = "save: syntax error!\r\n"
+			ext printf ( ( iaddrof str ) 0 )
+			drop
+		}	// if not space
+	}	// if rom
+	
+	// Если образ не загружен
+	if ( rom == 0x00 ) {
+		str = "save: rom is not loaded!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	}	// if rom is null
+}	// handle_save
+
+// Процедура запуска загруженного образа.
+// Ожидает "x <пробел> <опциональные аргументы>".
+proc handle_exec {
+	// Проверка загрузки образа
+	if ( rom ) {
+		// Инициализация машины.
+		ext vm_init ( rom )
+		store vm
+		
+		// Если машина успешно инициализирована
+		if ( vm ) {
+			// Получение указателя на аргументы.
+			args_ptr = ( buffer + 1 )
+			
+			// Замена конечных символов на нуль-терминатор для корректной обработки.
+			push args_ptr
+			call str_trim
+			
+			// Инициализация количества аргументов.
+			arg_count = 0
+		
+			delim_str = " "
+			ext strtok ( args_ptr ( iaddrof delim_str ) )
+			store token
+			
+			// Пока есть аргументы
+			while ( token ) {
+				// Обновление количества аргументов.
+				arg_count = ( arg_count + 1 )
+				
+				// Преобразование аргумента в слово.
+				ext atoi ( token )
+				store arg
+					
+				// Запись аргумента в стек машины.
+				ext vm_push ( vm arg )
+				
+				// Чтение следующего аргумента.
+				ext strtok ( 0x00 ( iaddrof delim_str ) )
+				store token
+			}	// while token
+				
+			// Если есть аргументы
+			if ( arg_count ) {
+				// Запись общего количества аргументов в машину.
+				ext vm_push ( vm arg_count )
+			}	// if arg_count
+				
+			// Вывод в консоль успеха инициализации и начала запуска.
+			str = "vm init at 0x%x, rom at 0x%x, argc: %d\r\nstarting...\r\n"
+			ext printf ( ( iaddrof str ) vm rom arg_count 3 )
+			drop
+			
+			// Цикл работы машины.
+			exec_status = 0 // est_work
+			while ( exec_status < 2 ) {
+				ext exec ( vm )
+				store exec_status
+				
+				// Обработка прерывания: прокидывается по цепочке.
+				if ( exec_status == 1 ) {
+					int
+				}	// if
+			}	// while exec_status
+				
+			// Вывод в консоль результата работы машины.
+			str = "exec done. status: %d\r\n"
+			ext printf ( ( iaddrof str ) exec_status 1 )
+			drop
+	
+			// Освобождение памяти, занятой под машину. Указатель не обнуляется.
+			ext vm_free ( vm )
+		}	// if vm
+			
+		if ( vm == 0x00 ) {
+			str = "exec: failed to init vm!\r\n"
+			ext printf ( ( iaddrof str ) path 1 )
+			drop
+		}	// if not vm
+	}	// if rom
+	
+	// Если образ не загружен
+	if ( rom == 0x00 ) {
+		str = "exec: rom is not loaded!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	}	// if rom is null
+}	// handle_exec
+
+// Процедура обработки команды system.
+// Выполняет команду оболочки. Ожидает "y <пробел> <команда оболочки".
+proc handle_system {
+	// Получение второго байта буфера.
+	sec_sym = ( bread ( buffer + 1 ) )
+	
+	// Если второй байт буфера является пробелом
+	if ( sec_sym == 0x20 ) {
+		// Вызов system() с третьего байта строки до конца.
+		ext system ( ( buffer + 2 ) )
+		store sys_res
+		
+		// Вывод результата выполнения system().
+		str = "system: %d\r\n"
+		ext printf ( ( iaddrof str ) sys_res 1 )
+		drop
+	}	// if space
+	
+	// Если второй байт буфера не является пробелом
+	if ( sec_sym != 0x20 ) {
+		str = "system: syntax error!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	}	// if not space
+}	// handle_system
+
+// Точка входа в программу.
+// Не принимает аргументы командной строки.
+proc main {
+	// Инициализация переменных.
+	version		= 1		// Версия bb.
+	buf_size	= 256	// Размер буфера команды.
+	rom			= 0x00	// Указатель на ROM для компиляции.
+	
+	// Вывод привествия в консоль.
+	str = "@woof!\r\n"
+	ext printf ( ( iaddrof str ) 0 )
+	drop
+	
+	// Инициализация буфера для команды.
+	ext malloc ( buf_size )
+	store buffer
+	ext memset ( buffer 0x00 buf_size )
+	drop
+	
+	// Проверка выделения памяти под буфер.
+	if ( buffer == 0 ) {
+		// Вывод ошибки в консоль.
+		str = "fatal: malloc error!\r\n"
+		ext printf ( ( iaddrof str ) 0 )
+		halt
+	}	// if buffer == 0
+	
+	// Очистка буфера.
+	ext memset ( buffer 0x00 buf_size )
+	drop
+	
+	// Флаг работы (0 - выход).
+	work_flag = 1
+	while ( work_flag ) {
+		// Вывод приглашения для ввода.
+		str = ">"
+		ext printf ( ( iaddrof str ) 0 )
+		drop
+	
+		// Чтение строки из stdin в буфер.
+		ext fgets ( buffer buf_size _stdin )
+		store fgets_res
+		
+		// Если чтение stdin успешно
+		if ( fgets_res ) {
+			// Получение команды (первого байта буфера)
+			command = ( bread buffer )
+
+			// Выбор по команде. Расположены в порядке возрастания ASCII-кодов символов.
+			// 'c' - компиляция.
+			if ( command == 0x63 ) {
+				call handle_compile
+			}	// exit
+			
+			// 'e' - выход.
+			if ( command == 0x65 ) {
+				// Сброс флага работы.
+				work_flag = 0
+			}	// exit
+			
+			// 'h' - помощь.
+			if ( command == 0x68 ) {
+				call handle_help
+			}	// help
+			
+			// 'i' - информация о системе.
+			if ( command == 0x69 ) {
+				call handle_info
+			}	// info
+			
+			// 'l' - загрузить образ с диска.
+			if ( command == 0x6c ) {
+				call handle_load
+			}	// load
+			
+			// 's' - сохранить образ на диск.
+			if ( command == 0x73 ) {
+				call handle_save
+			}	// save
+			
+			// 'x' - запуск образа.
+			if ( command == 0x78 ) {
+				call handle_exec
+			}	// exec
+			
+			// 'y' - системный вызов.
+			if ( command == 0x79 ) {
+				call handle_system
+			}	// system
+		} // if fgets_res
+	} // while work_flag
+	
+	// Очистка памяти, выделенной под буфер.
+	ext free ( buffer )
+	
+	// Вывод прощания в консоль.
+	str = "bye!\r\n"
+	ext printf ( ( iaddrof str ) 0 )
+	drop
+	halt
+}	// main

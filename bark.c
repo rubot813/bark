@@ -478,7 +478,7 @@ static cmp_status_t expr_paren(ctx_t *ctx, rom_t *rom) {
 
 lb_expr_paren_end:
 	// Обработка переполнения секций code и data ROM.
-	if (ctx->cp >= DATA_SIZE) status = cst_code_overflow;
+	if (ctx->cp >= CODE_SIZE) status = cst_code_overflow;
 	if (ctx->var_idx >= DATA_SIZE) status = cst_data_overflow;
 	return status;
 }	// expr_paren
@@ -520,7 +520,7 @@ static cmp_status_t expr_single(ctx_t *ctx, rom_t *rom) {
 	}	// if
 
 	// Обработка переполнения секций code и data ROM.
-	if (ctx->cp >= DATA_SIZE) status = cst_code_overflow;
+	if (ctx->cp >= CODE_SIZE) status = cst_code_overflow;
 	if (ctx->var_idx >= DATA_SIZE) status = cst_data_overflow;
 	return status;
 }	// expr_single
@@ -757,7 +757,7 @@ static cmp_status_t statement(ctx_t *ctx, rom_t *rom) {
 
 lb_statement_end:
 	// Обработка переполнения секций code и data ROM.
-	if (ctx->cp >= DATA_SIZE) status = cst_code_overflow;
+	if (ctx->cp >= CODE_SIZE) status = cst_code_overflow;
 	if (ctx->var_idx >= DATA_SIZE) status = cst_data_overflow;
 	return status;
 }	// statement
@@ -766,12 +766,13 @@ lb_statement_end:
 // prebuilt-переменные содержат префикс '_'.
 // Возвращает адрес последней созданной переменной (-1 - ошибка).
 static word_t make_prebuilt(ctx_t *ctx, rom_t *rom) {
-	word_t address = lookup_var("_lang_ver", ctx);
-	if (address != -1) rom->data[address] = LANG_VERSION;
-	address = lookup_var("_word_size", ctx);
-	if (address != -1) rom->data[address] = sizeof(word_t);
-	address = lookup_var("_rom_size", ctx);
-	if (address != -1) rom->data[address] = sizeof(rom_t);
+	word_t address;	// Адрес переменной для макроса MAKE_PREBUILT.
+	MAKE_PREBUILT("_lang_ver",  LANG_VERSION)
+	MAKE_PREBUILT("_word_size", sizeof(word_t))
+	MAKE_PREBUILT("_rom_size",  sizeof(rom_t))
+	MAKE_PREBUILT("_stdin",  	(word_t)(stdin))
+	MAKE_PREBUILT("_stdout", 	(word_t)(stdout))
+	MAKE_PREBUILT("_stderr",  	(word_t)(stderr))
 	return address;
 }	// make_prebuilt
 

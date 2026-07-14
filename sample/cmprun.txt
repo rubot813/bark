@@ -1,6 +1,6 @@
 proc file_read {
-	file_str = "H:\\bark_v1\\hw.txt";
-	file_mode_str = "rb";
+	file_str = "H:\\bark_v1\\hw.txt"
+	file_mode_str = "rb"
 	
 	// Открытие файла
 	ext fopen ( ( iaddrof file_str ) ( iaddrof file_mode_str ) )

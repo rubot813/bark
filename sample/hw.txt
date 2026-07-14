@@ -1,4 +1,5 @@
 proc main {
+	store arg_count
 	store param
 	var = 1337
 	str = "Hello world from bark! var: %d, param: %d.\r\n"

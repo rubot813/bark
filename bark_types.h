@@ -4,16 +4,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Alexander Soganov, 2026. v1
+/*
+	The Bark programming language
+	developed by Alexander Soganov, 2026
+*/
 
-#define LANG_VERSION		1		// Версия языка.
+#define LANG_VERSION		0x02	// Версия языка.
 #define ROM_MAGIC			0x032D	// Идентификатор ROM.
-#define DATA_SIZE			512		// Количество слов для в массивах data и code.
+#define CODE_SIZE			2048	// Количество слов в массиве code.
+#define DATA_SIZE			512		// Количество слов в массиве data.
 #define STACK_SIZE			16		// Глубина стека вычислений и стека вызовов.
 #define OP_STACK_SIZE		16		// Глубина стека операторов.
-#define MAX_TOKEN_COUNT		512		// Максимальное количество токенов.
-#define MAX_SYMBOL_COUNT	32		// Максимальное количество символов (переменные var и процедуры proc).
-#define MAX_NAME_LEN		32		// Максимальная длина имени символа.
+#define MAX_TOKEN_COUNT		2048	// Максимальное количество токенов.
+#define MAX_SYMBOL_COUNT	128		// Максимальное количество символов (переменные var и процедуры proc).
+#define MAX_NAME_LEN		16		// Максимальная длина имени символа.
 
 // Макросы взаимодействия со стеком VM.
 #define STACK_PUSH(word) vm->stack[vm->sp++] = word		// Положить слово на стек.
@@ -22,6 +26,11 @@
 
 // Вспомогательный макрос сранвнения строки.
 #define TOKEN_MATCH(str) strcmp(token, str) == 0
+
+// Макрос формирования prebuilt-переменной.
+#define MAKE_PREBUILT(name, value)				\
+address = lookup_var(name, ctx);				\
+if (address != -1) rom->data[address] = value;
 
 // Макросы проверки стека на отсутствия элемента/переполнение.
 #define EXEC_CHECK_SP_UFW(min_sp) if (vm->sp < min_sp) { status = est_stack_underflow; goto lb_exec_end; }
@@ -161,7 +170,7 @@ typedef struct {
 typedef struct {
 	uword_t	magic;				// Иденетификатор ROM.
 	uword_t entry_point;		// Точка входа в программу.
-	word_t	code[DATA_SIZE];	// Машинный код.
+	word_t	code[CODE_SIZE];	// Машинный код.
 	word_t	data[DATA_SIZE];	// Данные.
 } rom_t;
 

@@ -3,7 +3,7 @@
 #include "bark.h"
 
 int main() {
-	FILE *f = fopen("H:\\bark_v1\\cmprun.txt", "rb");
+	FILE *f = fopen("H:\\bark_v1\\bark\\sample\\bb.txt", "rb");
 	if (!f)
 		return 1;
     fseek(f, 0, SEEK_END);
@@ -19,6 +19,13 @@ int main() {
     if (status == cst_success) {
 		vm_t *vm = bark_vm_init(rom);
 		word_t ex_status = est_work;
+
+		// Параметры запуска.
+		//char *str = "file path!";
+		//bark_vm_push(vm, (word_t)(str));
+		// bark_vm_push(vm, (word_t)(1));
+		//bark_vm_push(vm, (word_t)(0));
+
 		while (ex_status < est_halt)
 			ex_status = bark_exec(vm);
 		printf("#done. status: %d, sp: %d\r\n", ex_status, vm->sp);
