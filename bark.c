@@ -216,7 +216,7 @@ static bool emit_array(ctx_t *ctx, rom_t *rom) {
 	return result;
 }	// emit_array
 
-// Внутренняя функция патчинга ячейки code ROM. Принмает адрес для патчинга.
+// Внутренняя функция патчинга ячейки code ROM. Принимает адрес для патчинга.
 static inline void patch(word_t address, ctx_t *ctx, rom_t *rom) {
 	rom->code[address] = ctx->cp;
 }	// patch
@@ -585,22 +585,47 @@ static cmp_status_t statement(ctx_t *ctx, rom_t *rom) {
 		// Обработка выражения внутри круглых скобок.
 		status = expression(ctx, rom);
 
-		// Валидация токена (открывающая выражение фигурная скобка).
+		// Валидация токена (открывающая определение фигурная скобка).
 		if (token_match("{", ctx)) {
 			// Генерация опкода прыжка и сохранение адреса патчинга.
 			emit(op_jz, ctx, rom);
-			word_t patch_addr = ctx->cp++;
+			word_t patch_if_addr = ctx->cp++;
 
 			// Обработка определений внутри фигурных скобок.
 			while (strcmp(token_peek(ctx), "}") != 0)
 				status = statement(ctx, rom);
 
-			// Валидация токена (закрывающая выражение фигурная скобка).
+			// Валидация токена (закрывающая определение фигурная скобка).
 			if (!token_match("}", ctx))
 				status = cst_token_mismatch;
 
-			// Патчинг.
-			patch(patch_addr, ctx, rom);
+			// Генерация безусловного прыжка в обход возможного else.
+			emit(op_jump, ctx, rom);
+			word_t patch_else_addr = ctx->cp++;
+
+			// Патчинг if.
+			patch(patch_if_addr, ctx, rom);
+
+			// Проверка наличия опционального else.
+			if (strcmp(token_peek(ctx), "else") == 0) {
+				// Сброс текущего токена.
+				token_next(ctx);
+
+				// Валидация токена (открывающая определение фигурная скобка).
+				if (token_match("{", ctx)) {
+					// Обработка определений внутри фигурных скобок.
+					while (strcmp(token_peek(ctx), "}") != 0)
+						status = statement(ctx, rom);
+
+					// Валидация токена (закрывающая определение фигурная скобка).
+					if (!token_match("}", ctx))
+						status = cst_token_mismatch;
+				} else
+					status = cst_token_mismatch;
+			}	// else
+
+			// Патчинг else.
+			patch(patch_else_addr, ctx, rom);
 		} else
 			status = cst_token_mismatch;
 		goto lb_statement_end;

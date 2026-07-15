@@ -81,7 +81,7 @@ proc handle_compile {
 			ext fread ( file_buffer file_size 1 file )
 			store read_count
 			
-			// Если чтене файла произведено успешно
+			// Если чтение файла произведено успешно
 			if ( read_count == 1 ) {
 				// Записать в конец файла нуль терминатор: file_buffer[file_size] = '\0'
 				write ( file_buffer + file_size ) = 0x00
@@ -113,43 +113,27 @@ proc handle_compile {
 						str = "compilation success | magic: 0x%x\r\n"
 						ext printf ( ( iaddrof str ) rom_magic 1 )
 						drop
-					}	// if compilation success
-					
-					// Если компиляция завершилась ошибкой.
-					if ( comp_status ) {
+					} else {
 						str = "compilation failed | error code: %d\r\n"
 						ext printf ( ( iaddrof str ) comp_status 1 )
 						drop
 					}	// if compilation success
-				} // if rom
-				
-				// Если не удалось инициализировать образ
-				if ( rom == 0x00 ) {
+				} else {
 					str = "compile: failed to load rom!\r\n"
 					ext printf ( ( iaddrof str ) path 1 )
 					drop
 				}	// if not rom
-				
-			} // if read_count
-			
-			// Если чтение файла завершилось ошибкой
-			if ( read_count != 1 ) {
+			} else {
 				str = "compile: failed to read file!\r\n"
 				ext printf ( ( iaddrof str ) 0 )
 				drop
 			}	// if read_count
-		}	// if file
-		
-		// Если не удалось открыть файл
-		if ( file == 0x00 ) {
+		} else {
 			str = "compile: cannot open file '%s'!\r\n"
 			ext printf ( ( iaddrof str ) path 1 )
 			drop
 		}	// if not file
-	}	// if space
-	
-	// Если второй байт буфера не является пробелом
-	if ( sec_sym != 0x20 ) {
+	} else {
 		str = "compile: syntax error!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
@@ -233,10 +217,7 @@ proc handle_load {
 						str = "file read successfull\r\n"
 						ext printf ( ( iaddrof str ) 0 )
 						drop
-					}	// if read_size
-					
-					// Если чтение завершилось ошибкой
-					if ( read_size != 1 ) {
+					} else {
 						str = "load: failed to read file\r\n"
 						ext printf ( ( iaddrof str ) 0 )
 						drop
@@ -245,10 +226,7 @@ proc handle_load {
 						call rom_unload
 					}	// if read_size
 				}	// if rom
-			}	// if file_size
-			
-			// Если размер файла некорректен
-			if ( file_size != _rom_size ) {
+			} else {
 				str = "load: incorrect file size file %d/%d b.\r\n"
 				ext printf ( ( iaddrof str ) file_size _rom_size 2 )
 				drop
@@ -257,18 +235,12 @@ proc handle_load {
 			// Закрыть файл.
 			ext fclose ( file )
 			drop
-		}	// if file
-		
-		// Если не удалось открыть файл
-		if ( file == 0x00 ) {
+		} else {
 			str = "load: cannot open file '%s'!\r\n"
 			ext printf ( ( iaddrof str ) path 1 )
 			drop
 		}	// if not file
-	}	// if space
-	
-	// Если второй байт буфера не является пробелом
-	if ( sec_sym != 0x20 ) {
+	} else {
 		str = "load: syntax error!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
@@ -311,10 +283,7 @@ proc handle_save {
 					str = "write successfull\r\n"
 					ext printf ( ( iaddrof str ) write_count 1 )
 					drop
-				}	// if write count
-				
-				// Если произошла ошибка записи
-				if ( write_count == 0 ) {
+				} else {
 					// Запись в консоль об ошибке.
 					str = "save: failed to write\r\n"
 					ext printf ( ( iaddrof str ) write_count _rom_size 2 )
@@ -324,26 +293,17 @@ proc handle_save {
 				// Закрыть файл.
 				ext fclose ( file )
 				drop
-			}	// if file
-		
-			// Если не удалось открыть файл
-			if ( file == 0x00 ) {
+			} else {
 				str = "save: cannot create file '%s'!\r\n"
 				ext printf ( ( iaddrof str ) path 1 )
 				drop
 			}	// if not file
-		}	// if space
-	
-		// Если второй байт буфера не является пробелом
-		if ( sec_sym != 0x20 ) {
+		} else {
 			str = "save: syntax error!\r\n"
 			ext printf ( ( iaddrof str ) 0 )
 			drop
 		}	// if not space
-	}	// if rom
-	
-	// Если образ не загружен
-	if ( rom == 0x00 ) {
+	} else {
 		str = "save: rom is not loaded!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
@@ -422,17 +382,12 @@ proc handle_exec {
 	
 			// Освобождение памяти, занятой под машину. Указатель не обнуляется.
 			ext vm_free ( vm )
-		}	// if vm
-			
-		if ( vm == 0x00 ) {
+		} else {
 			str = "exec: failed to init vm!\r\n"
 			ext printf ( ( iaddrof str ) path 1 )
 			drop
 		}	// if not vm
-	}	// if rom
-	
-	// Если образ не загружен
-	if ( rom == 0x00 ) {
+	} else {
 		str = "exec: rom is not loaded!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
@@ -455,10 +410,7 @@ proc handle_system {
 		str = "system: %d\r\n"
 		ext printf ( ( iaddrof str ) sys_res 1 )
 		drop
-	}	// if space
-	
-	// Если второй байт буфера не является пробелом
-	if ( sec_sym != 0x20 ) {
+	} else {
 		str = "system: syntax error!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
