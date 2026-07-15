@@ -1,4 +1,7 @@
+
 # The Bark Programming Language
+
+<img width="144" height="66" alt="woof" src="https://github.com/user-attachments/assets/2a3e2d9b-2859-4067-8f2e-13a3b3d85783" />
 
 Bark is a minimal, low-level, imperative programming language powered by a lightweight stack-based virtual machine. It blends the simplicity of structured imperative syntax with the raw power, execution model, and memory mechanics of Forth.
 
