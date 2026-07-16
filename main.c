@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
 		// Выполнение программы до ее завершения.
 		while (ex_status < est_halt)
-			ex_status = bark_exec(vm);
+			ex_status = bark_exec(vm, 1024);
 
 		// Программа завершена успешно.
 		printf("Program finished with status: %d, sp: %d\r\n", ex_status, vm->sp);

@@ -1,0 +1,7 @@
+// Точка входа в программу.
+proc main {
+	str = "Hellow world!\r\n"
+	ext printf ( ( iaddrof str ) 0 )
+	drop
+	halt
+}	// main

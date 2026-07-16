@@ -832,7 +832,7 @@ static ex_status_t exec_op(vm_t *vm) {
 		case (op_add):	result = (nos + tos); break;
 		case (op_sub):	result = (nos - tos); break;
 		case (op_mul):	result = (nos * tos); break;
-		case (op_mod):	result = (nos % tos); break;
+		case (op_mod):	{ if (tos) result = (nos % tos); else { status = est_div_by_zero; goto lb_exec_op_end; } break; }
 		case (op_div):	{ if (tos) result = (nos / tos); else { status = est_div_by_zero; goto lb_exec_op_end; } break; }
 
 		// Логические операции.
@@ -948,7 +948,7 @@ void bark_vm_reset(vm_t *vm) {
 	}	// if vm
 }	// bark_vm_reset
 
-word_t bark_exec(vm_t *vm) {
+word_t bark_exec(vm_t *vm, word_t cycle) {
 	// Статус выполнения программы.
 	ex_status_t status = est_work;
 
@@ -956,7 +956,7 @@ word_t bark_exec(vm_t *vm) {
 	char *data_byte = (char *)(vm->rom->data);
 
 	// Цикл выполнения опкодов.
-	while (status == est_work) {
+	while ((status == est_work) && (cycle-- > 0)) {
 		// Выбор по опкоду.
 		switch (vm->rom->code[vm->pc++]) {
 			// Общие инструкции.

@@ -9,7 +9,7 @@
 	developed by Alexander Soganov, 2026
 */
 
-#define LANG_VERSION		0x02	// Версия языка.
+#define LANG_VERSION		0x03	// Версия языка.
 #define ROM_MAGIC			0x032D	// Идентификатор ROM.
 #define CODE_SIZE			2048	// Количество слов в массиве code.
 #define DATA_SIZE			512		// Количество слов в массиве data.
