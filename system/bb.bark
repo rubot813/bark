@@ -91,6 +91,7 @@ proc handle_compile {
 				ext printf ( ( iaddrof str ) 0 )
 				drop
 			}	// if read_count
+			ext free ( file_buffer )
 		} else {
 			str = "compile: cannot open file '%s'!\r\n"
 			ext printf ( ( iaddrof str ) path 1 )
@@ -304,21 +305,15 @@ proc main {
 	str = "@woof!\r\n"
 	ext printf ( ( iaddrof str ) 0 )
 	drop
-	
 	ext malloc ( buf_size )
 	store buffer
-	ext memset ( buffer 0x00 buf_size )
-	drop
-	
 	if ( buffer == 0 ) {
 		str = "fatal: malloc error!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		halt
 	}	// if buffer == 0
-	
 	ext memset ( buffer 0x00 buf_size )
 	drop
-	
 	work_flag = 1
 	while ( work_flag ) {
 		str = ">"
