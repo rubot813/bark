@@ -40,10 +40,12 @@ static inline va_list ext_make_va(void *ptr, ...) {
 // Выбор по типу ABI.
 #if defined(__x86_64__)
 	// AMD64 ABI.
-	((struct { unsigned int gp; unsigned int fp; void *mem; void *reg; }*)&(args))->mem = ptr;
+	((struct {unsigned int gp; unsigned int fp; void *mem; void *reg;}*)&(args))->mem = ptr;
 #elif defined(__aarch64__)
 	// AArch64 ABI.
-	((struct { void *stack; void *gr_top; void *vr_top; int gr_offs; int vr_offs; }*)&(args))->stack = ptr;
+	struct arm64_va {void *stack; void *gr_top; void *vr_top; int gr_offs; int vr_offs;} *va = (struct arm64_va*)&(args);
+    va->stack = ptr;
+    va->gr_offs = va->vr_offs = 0; // Не читать из gp, fp/simd регистров.
 #endif	// if cpu
     return args;
 }	// ext_make_va
