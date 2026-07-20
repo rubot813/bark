@@ -3,8 +3,10 @@
 #include "bark.h"
 
 /*
-	Bark language bootstrap for Windows/Linux.
-	Compiling: -std=c11 bark.c bark_ext.c main.c
+	Bark language bootstrap.
+	Compiling:
+	gcc -std=c11 bark.c bark_ext.c main.c -o bark
+	clang -std=c11 bark.c bark_ext.c main.c -o bark
 */
 
 int main(int argc, char *argv[]) {
@@ -60,9 +62,9 @@ int main(int argc, char *argv[]) {
 			ex_status = bark_exec(vm, 1024);
 
 		// Программа завершена успешно.
-		printf("Program finished with status: %d, sp: %d\r\n", ex_status, vm->sp);
+		printf("Program finished with status: %d, sp: %d\r\n", (int)(ex_status), vm->sp);
     } else
 		// Компиляция завершена с ошибкой.
-		printf("Compilation error with code: %d\r\n", status);
+		printf("Compilation error with code: %d\r\n", (int)(status));
     return EXIT_SUCCESS;
 }	// main

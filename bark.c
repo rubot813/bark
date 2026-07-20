@@ -1,8 +1,7 @@
+#include <stdio.h>	// stdin, stdout, stderr.
 #include <stdlib.h>
 #include <string.h>
 #include "bark.h"
-
-#include <stdio.h>
 
 // Разрешение символов внешних функций (ссылки на bark_ext.o).
 extern const char *ext_name[];		// Массив названий функций.
@@ -195,7 +194,7 @@ static void emit_str(char *str, ctx_t *ctx, rom_t *rom) {
 
 	// Добавление нуль-терминатора и обновление количества зарезервированных слов в data.
 	*dst++ = '\0';
-	ctx->var_idx += ((dst - start_dst) + 3) / 4;
+	ctx->var_idx += ((dst - start_dst) + (sizeof(word_t) - 1)) / sizeof(word_t);
 }	// emit_str
 
 // Внутренняя функция записи массива в секцию code ROM.
