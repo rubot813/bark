@@ -59,7 +59,7 @@ proc handle_compile {
 			store read_count
 			if ( read_count == 1 ) {
 				// file_buffer[file_size] = '\0'
-				write ( file_buffer + file_size ) = 0x00
+				bwrite ( file_buffer + file_size ) = 0x00
 				ext fclose ( file )
 				drop
 				call rom_unload
@@ -297,7 +297,7 @@ proc handle_system {
 // Точка входа в программу.
 // Не принимает аргументы командной строки.
 proc main {
-	version		= 2		// Версия bb.
+	version		= 3		// Версия bb.
 	buf_size	= 256	// Размер буфера команды.
 	rom			= 0x00	// Указатель на ROM для компиляции.
 	
