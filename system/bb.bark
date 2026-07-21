@@ -48,7 +48,7 @@ proc handle_compile {
 			drop
 			ext ftell ( file )
 			store file_size
-			str = "file '%s' opened. size: %db.\r\n"
+			str = "file '%s' opened. size: %d b.\r\n"
 			ext printf ( ( iaddrof str ) path file_size 2 )
 			drop
 			ext fseek ( file 0 0 )	// 0 == SEEK_SET
@@ -115,8 +115,11 @@ proc handle_help {
 // Процедура обработки команды info.
 // Выводит информацию о bb и bark.
 proc handle_info {
-	str = "bb ver: %d, lang ver: %d\r\nword_size: %db, rom size: %db\r\nstdin: 0x%x, stdout: 0x%x, stderr: 0x%x\r\n"
-	ext printf ( ( iaddrof str ) version _lang_ver _word_size _rom_size _stdin _stdout _stderr 7 )
+	str = "bb ver: %d, lang ver: %d\r\nword_size: %d b, rom size: %d b\r\n"
+	ext printf ( ( iaddrof str ) version _lang_ver _word_size _rom_size 4 )
+	drop
+	str = "stdin: 0x%x\r\nstdout: 0x%x\r\nstderr: 0x%x\r\n"
+	ext printf ( ( iaddrof str ) stdin stdout stderr 3 )
 	drop
 }	// handle_info
 
@@ -136,7 +139,7 @@ proc handle_load {
 			drop
 			ext ftell ( file )
 			store file_size
-			str = "file '%s' opened. size: %db.\r\n"
+			str = "file '%s' opened. size: %d b.\r\n"
 			ext printf ( ( iaddrof str ) path file_size 2 )
 			drop
 			ext fseek ( file 0 0 )	// 0 == SEEK_SET
@@ -279,7 +282,7 @@ proc handle_exec {
 }	// handle_exec
 
 // Процедура обработки команды system.
-// Выполняет команду оболочки. Ожидает "y <пробел> <команда оболочки".
+// Выполняет команду оболочки. Ожидает "y <пробел> <команда оболочки>".
 proc handle_system {
 	sec_sym = ( bread ( buffer + 1 ) )
 	if ( sec_sym == 0x20 ) {
@@ -298,20 +301,23 @@ proc handle_system {
 // Точка входа в программу.
 // Не принимает аргументы командной строки.
 proc main {
-	version		= 3		// Версия bb.
+	ext std ( )
+	store stdin
+	store stdout
+	store stderr
+	version		= 4		// Версия bb.
 	buf_size	= 256	// Размер буфера команды.
 	rom			= 0x00	// Указатель на ROM для компиляции.
-	
 	str = "@woof!\r\n"
 	ext printf ( ( iaddrof str ) 0 )
 	drop
 	ext malloc ( buf_size )
 	store buffer
-	if ( buffer == 0 ) {
+	if ( buffer == 0x00 ) {
 		str = "fatal: malloc error!\r\n"
 		ext printf ( ( iaddrof str ) 0 )
 		halt
-	}	// if buffer == 0
+	}	// if buffer
 	ext memset ( buffer 0x00 buf_size )
 	drop
 	work_flag = 1
@@ -319,10 +325,8 @@ proc main {
 		str = ">"
 		ext printf ( ( iaddrof str ) 0 )
 		drop
-	
-		ext fgets ( buffer buf_size _stdin )
+		ext fgets ( buffer buf_size stdin )
 		store fgets_res
-		
 		if ( fgets_res ) {
 			command = ( bread buffer )
 			if ( command == 0x63 ) {

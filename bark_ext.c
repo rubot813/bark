@@ -83,11 +83,12 @@ const char* ext_name[] = {
 
 	// = = = = bark = = = =
 	"rom_init", "compile", "vm_init", "vm_reset",
-	"exec", "vm_push", "vm_store", "rom_free", "vm_free"
+	"exec", "vm_push", "vm_store", "rom_free",
+	"vm_free", "std"
 };	// ext_name
 
 // Определение общего количества внешних функций в ext_name.
-const word_t ext_count = 45;
+const word_t ext_count = 46;
 
 // Тип массива аргументов внешней функции.
 typedef word_t arg_t[EXT_MAX_ARG_COUNT];
@@ -171,6 +172,7 @@ word_t ext(word_t id, vm_t *vm) {
 		case (42) : EXT_DEFINE_FUNC(1, STACK_PUSH(bark_vm_store((vm_t *)(arg[0])))); break;
 		case (43) : EXT_DEFINE_FUNC(1, bark_rom_free((rom_t *)(arg[0]))); break;
 		case (44) : EXT_DEFINE_FUNC(1, bark_vm_free((vm_t *)(arg[0]))); break;
+		case (45) : STACK_PUSH((word_t)(stderr)); STACK_PUSH((word_t)(stdout)); STACK_PUSH((word_t)(stdin)); break;
 
 		// Внешняя функция не найдена.
 		default: status = est_ext_not_found;

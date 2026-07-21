@@ -1,4 +1,3 @@
-#include <stdio.h>	// stdin, stdout, stderr.
 #include <stdlib.h>
 #include <string.h>
 #include "bark.h"
@@ -794,9 +793,6 @@ static word_t make_prebuilt(ctx_t *ctx, rom_t *rom) {
 	MAKE_PREBUILT("_lang_ver",  LANG_VERSION)
 	MAKE_PREBUILT("_word_size", sizeof(word_t))
 	MAKE_PREBUILT("_rom_size",  sizeof(rom_t))
-	MAKE_PREBUILT("_stdin",  	(word_t)(stdin))
-	MAKE_PREBUILT("_stdout", 	(word_t)(stdout))
-	MAKE_PREBUILT("_stderr",  	(word_t)(stderr))
 	return address;
 }	// make_prebuilt
 

@@ -5,8 +5,8 @@
 /*
 	Bark language bootstrap.
 	Compiling:
-	gcc -std=c11 bark.c bark_ext.c main.c -o bark
-	clang -std=c11 bark.c bark_ext.c main.c -o bark
+	gcc -std=c11 *.c -o bark
+	clang -std=c23 *.c -o bark
 */
 
 int main(int argc, char *argv[]) {
@@ -63,13 +63,13 @@ int main(int argc, char *argv[]) {
 
 		// Программа завершена успешно.
 		printf("Program finished with status: %d, sp: %d\r\n", (int)(ex_status), vm->sp);
-		
+
 		// Очистка памяти, выделенной под машину.
 		bark_vm_free(vm);
     } else
 		// Компиляция завершена с ошибкой.
 		printf("Compilation error with code: %d\r\n", (int)(status));
-		
+
 	// Очистка памяти и выход.
 	bark_rom_free(rom);
 	free(buffer);
